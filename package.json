@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@vue/compiler-dom": "^3.3.4",
+    "@vue/compiler-sfc": "^3.3.4",
     "koa": "^2.14.2",
     "vue": "^3.3.4"
   }

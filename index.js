@@ -1,6 +1,9 @@
 const Koa = require('koa')
 const fs = require('fs')
 const path = require('path')
+const compilerSfc = require('@vue/compiler-sfc')
+const compilerDom = require('@vue/compiler-dom')
+
 const app = new Koa();
 
 app.use(async ctx => {
@@ -37,6 +40,31 @@ app.use(async ctx => {
     const content = fs.readFileSync(p, 'utf-8')
     ctx.type = 'application/javascript'
     ctx.body = rewriteImport(content)
+  }
+  // SFC
+  else if (url.indexOf('.vue') > -1) {
+    // *.vue?type=template
+    const p = path.resolve(__dirname, url.split('?')[0].slice(1))
+    const content = compilerSfc.parse(fs.readFileSync(p, 'utf-8'))
+    // console.log(content)
+    const { descriptor } = content;
+    ctx.type = 'application/javascript'
+
+    if (!query.type) {
+      // *.vue
+      ctx.body = `${rewriteImport(
+        descriptor.script.content.replace('export default ', 'const __script = ')
+      )}
+      import { render as __render } from "${url}?type=template"
+      __script.render = __render;
+      export default __script;
+      `
+    } else {
+      // template => render
+      const template = descriptor.template
+      const render = compilerDom.compile(template.content, { mode: 'module' })
+      ctx.body = rewriteImport(render.code)
+    }
   }
 
   function rewriteImport(content) {
