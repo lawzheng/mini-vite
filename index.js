@@ -66,6 +66,21 @@ app.use(async ctx => {
       ctx.body = rewriteImport(render.code)
     }
   }
+  else if (url.endsWith('.css')) {
+    const p = path.resolve(__dirname, url.slice(1))
+    const file = fs.readFileSync(p, 'utf-8');
+    console.log(file)
+    const content = `
+      const css = "${file.replace(/\n/g, "")}"
+      let link = document.createElement('style')
+      link.setAttribute('type', 'text/css')
+      document.head.appendChild(link)
+      link.innerHTML = css
+      export default css
+    `;
+    ctx.type = 'application/javascript'
+    ctx.body = content
+  }
 
   function rewriteImport(content) {
     return content.replace(/ from ['|"]([^'"]+)['|"]/g, function (s0, s1) {
